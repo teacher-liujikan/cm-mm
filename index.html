@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>公分毫米大挑戰</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#E9F1EC; --paper:#FFFDF6; --ink:#1F2E28; --soft:#5B6D65;
+  --board:#2F5D50; --ruler:#F4C542; --ruler-edge:#C99A1E; --tick:#3A2E12;
+  --ok:#2E8B57; --bad:#D2493F; --line:#CFDCD4; --key:#FFFFFF; --key-shadow:#B9C9C0;
+  --fill:rgba(47,93,80,.28);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15201C; --paper:#1E2B26; --ink:#EEF3EF; --soft:#A5B6AE;
+    --board:#7FC3AC; --line:#34463F; --key:#27372F; --key-shadow:#0E1512;
+    --ok:#5CC98B; --bad:#FF7A6E; --fill:rgba(127,195,172,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15201C; --paper:#1E2B26; --ink:#EEF3EF; --soft:#A5B6AE;
+  --board:#7FC3AC; --line:#34463F; --key:#27372F; --key-shadow:#0E1512;
+  --ok:#5CC98B; --bad:#FF7A6E; --fill:rgba(127,195,172,.35);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.5}
+.num{font-family:"Baloo 2","Noto Sans TC",system-ui,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 40px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--board);outline-offset:3px}
+.hidden{display:none!important}
+
+/* ruler: the signature element */
+.ruler-box{overflow-x:auto;border-radius:10px}
+.ruler{display:block;width:100%;min-width:560px;height:auto}
+
+/* start screen */
+.title{font-size:clamp(2rem,7vw,3.2rem);font-weight:900;margin:8px 0 4px;letter-spacing:.02em}
+.sub{color:var(--soft);margin:0 0 18px;font-size:1.05rem}
+.fact{background:var(--paper);border:2px solid var(--line);border-radius:14px;padding:14px 16px 10px;margin-bottom:22px}
+.fact p{margin:0 0 8px;font-weight:700;font-size:1.15rem}
+.fact p .num{font-size:1.4rem}
+h2{font-size:1.1rem;margin:22px 0 10px}
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lv{text-align:left;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:12px 14px}
+.lv strong{display:block;font-size:1.05rem}
+.lv span{color:var(--soft);font-size:.95rem}
+.lv[aria-pressed="true"]{border-color:var(--board);box-shadow:inset 0 0 0 2px var(--board)}
+.modes{display:flex;gap:10px;flex-wrap:wrap}
+.mode{flex:1 1 200px;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:12px 14px;text-align:left}
+.mode[aria-pressed="true"]{border-color:var(--board);box-shadow:inset 0 0 0 2px var(--board)}
+.mode strong{display:block}
+.mode span{color:var(--soft);font-size:.95rem}
+.go{margin-top:22px;width:100%;background:var(--board);color:#fff;border:0;border-radius:14px;padding:16px;font-size:1.3rem;font-weight:900;box-shadow:0 5px 0 rgba(0,0,0,.25)}
+:root[data-theme="dark"] .go{color:#10201A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .go{color:#10201A}}
+.go:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+
+/* game screen */
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{background:var(--paper);border:2px solid var(--line);border-radius:999px;padding:4px 14px;font-weight:700}
+.chip .num{font-size:1.2rem}
+.spacer{flex:1}
+.quit{background:transparent;border:2px solid var(--line);border-radius:999px;padding:4px 14px;font-weight:700;color:var(--soft)}
+.timebar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.timebar i{display:block;height:100%;background:var(--board);width:100%;transition:width 1s linear}
+.q{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:26px 16px;text-align:center;
+  font-size:clamp(1.6rem,6vw,2.5rem);font-weight:900;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:.25em .3em;min-height:130px}
+.q .num{font-size:1.2em;line-height:1}
+.q rt{font-size:.38em;font-weight:500;color:var(--soft)}
+.blank{display:inline-flex;align-items:center;justify-content:center;min-width:3.2em;height:1.5em;padding:0 .3em;
+  border:3px dashed var(--board);border-radius:10px;color:var(--board);font-family:"Baloo 2",sans-serif;font-size:1.1em;line-height:1}
+.blank.ok{border-style:solid;border-color:var(--ok);color:var(--ok)}
+.blank.bad{border-style:solid;border-color:var(--bad);color:var(--bad);animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{min-height:3.2em;margin:12px 4px 6px;font-weight:700;font-size:1.1rem;text-align:center}
+.feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+.feedback small{display:block;font-weight:500;color:var(--ink);font-size:1rem}
+.pad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+.k{background:var(--key);border:2px solid var(--line);border-radius:12px;padding:12px 0;font-size:1.5rem;font-weight:800;box-shadow:0 4px 0 var(--key-shadow)}
+.k:active{transform:translateY(3px);box-shadow:0 1px 0 var(--key-shadow)}
+.row2{display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;margin-top:8px}
+.k.small{font-size:1.05rem}
+.k.enter{background:var(--board);color:#fff;border-color:var(--board)}
+:root[data-theme="dark"] .k.enter{color:#10201A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .k.enter{color:#10201A}}
+.ruler-area{margin-top:16px}
+.ruler-cap{font-size:.95rem;color:var(--soft);margin:0 0 4px}
+
+/* end */
+.end{text-align:center;background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:28px 18px}
+.big{font-size:4.5rem;font-weight:800;line-height:1;color:var(--board)}
+.end p{margin:6px 0}
+.again{display:flex;gap:10px;margin-top:18px}
+.again button{flex:1;border-radius:12px;padding:14px;font-weight:800;font-size:1.1rem;border:2px solid var(--line);background:var(--key)}
+.again .primary{background:var(--board);color:#fff;border-color:var(--board)}
+:root[data-theme="dark"] .again .primary{color:#10201A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .again .primary{color:#10201A}}
+.foot{margin-top:32px;padding-top:16px;border-top:2px solid var(--line);text-align:center;color:var(--soft)}
+.foot p{margin:0 0 10px;font-size:.95rem}
+.social{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.social a{display:inline-block;background:var(--paper);border:2px solid var(--line);border-radius:999px;padding:8px 18px;
+  color:var(--board);font-weight:700;text-decoration:none}
+.social a:hover{border-color:var(--board)}
+.social a:focus-visible{outline:3px solid var(--board);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- START -->
+  <section id="start">
+    <h1 class="title">公分毫米大挑戰</h1>
+    <p class="sub">看尺想一想，一直練到又快又準！</p>
+    <div class="fact">
+      <p><span class="num">1</span> 公分 ＝ <span class="num">10</span> 毫米　（<span class="num">1</span> cm ＝ <span class="num">10</span> mm）</p>
+      <div class="ruler-box"><svg class="ruler" id="demoRuler" viewBox="0 0 1660 130" role="img" aria-label="尺上標示 1 公分等於 10 毫米"></svg></div>
+    </div>
+
+    <h2>選關卡</h2>
+    <div class="levels" id="levels">
+      <button class="lv" data-lv="1" aria-pressed="true"><strong>第 1 關：公分 → 毫米</strong><span>8 公分 ＝ ( ) 毫米</span></button>
+      <button class="lv" data-lv="2" aria-pressed="false"><strong>第 2 關：毫米 → 公分</strong><span>60 毫米 ＝ ( ) 公分</span></button>
+      <button class="lv" data-lv="3" aria-pressed="false"><strong>第 3 關：cm 和 mm</strong><span>10 cm ＝ ( ) mm</span></button>
+      <button class="lv" data-lv="4" aria-pressed="false"><strong>第 4 關：幾公分幾毫米</strong><span>3 公分 5 毫米 ＝ ( ) 毫米</span></button>
+      <button class="lv" data-lv="0" aria-pressed="false"><strong>大混合</strong><span>四種題目通通來</span></button>
+    </div>
+
+    <h2>選玩法</h2>
+    <div class="modes" id="modes">
+      <button class="mode" data-mode="practice" aria-pressed="true"><strong>練習模式</strong><span>不限時間，答錯會給提示</span></button>
+      <button class="mode" data-mode="timed" aria-pressed="false"><strong>60 秒挑戰</strong><span>看看一分鐘能答對幾題</span></button>
+    </div>
+    <button class="go" id="goBtn">開始！</button>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="hidden">
+    <div class="bar">
+      <span class="chip">答對 <span class="num" id="score">0</span></span>
+      <span class="chip">連續 <span class="num" id="streak">0</span></span>
+      <span class="chip hidden" id="timeChip">剩 <span class="num" id="time">60</span> 秒</span>
+      <span class="spacer"></span>
+      <button class="quit" id="quitBtn">結束</button>
+    </div>
+    <div class="timebar hidden" id="timebar"><i id="timefill"></i></div>
+
+    <div class="q" id="q" aria-live="polite"></div>
+    <div class="feedback" id="fb" aria-live="polite"></div>
+
+    <div class="pad" id="pad">
+      <button class="k num" data-k="1">1</button><button class="k num" data-k="2">2</button><button class="k num" data-k="3">3</button><button class="k num" data-k="4">4</button><button class="k num" data-k="5">5</button>
+      <button class="k num" data-k="6">6</button><button class="k num" data-k="7">7</button><button class="k num" data-k="8">8</button><button class="k num" data-k="9">9</button><button class="k num" data-k="0">0</button>
+    </div>
+    <div class="row2">
+      <button class="k small" data-k="del">刪除</button>
+      <button class="k small" data-k="hint" id="hintBtn">看尺提示</button>
+      <button class="k small enter" data-k="ok" id="okBtn">確定</button>
+    </div>
+
+    <div class="ruler-area hidden" id="rulerArea">
+      <p class="ruler-cap" id="rulerCap"></p>
+      <div class="ruler-box"><svg class="ruler" id="ruler" viewBox="0 0 1660 130" role="img" aria-label="尺"></svg></div>
+    </div>
+  </section>
+
+  <!-- END -->
+  <section id="end" class="hidden">
+    <div class="end">
+      <p id="endTitle" style="font-weight:900;font-size:1.3rem">做得好！</p>
+      <div class="big num" id="endScore">0</div>
+      <p>題答對</p>
+      <p id="endDetail" style="color:var(--soft)"></p>
+      <p id="endBest" style="font-weight:700"></p>
+    </div>
+    <div class="again">
+      <button id="menuBtn">換關卡</button>
+      <button class="primary" id="againBtn">再玩一次</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>追蹤老師媽咪，看更多數學小遊戲</p>
+    <div class="social">
+      <a href="https://www.instagram.com/teacher_liujikan/" target="_blank" rel="noopener">Instagram　@teacher_liujikan</a>
+      <a href="https://www.threads.com/@teacher_liujikan?hl=zh-tw" target="_blank" rel="noopener">Threads　@teacher_liujikan</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  // ---------- units with zhuyin ----------
+  var ZH = {
+    cm:'<ruby>公<rt>ㄍㄨㄥ</rt></ruby><ruby>分<rt>ㄈㄣ</rt></ruby>',
+    mm:'<ruby>毫<rt>ㄏㄠˊ</rt></ruby><ruby>米<rt>ㄇㄧˇ</rt></ruby>'
+  };
+  var PLAIN = {cm:'公分', mm:'毫米'};
+  function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+  // ---------- question generators ----------
+  // parts: {n}, {u}, {eq}, {blank}
+  function q1(){ var c=rnd(1,15);
+    return {sym:false, parts:[{n:c},{u:'cm'},{eq:1},{blank:1},{u:'mm'}], ans:c*10, mm:c*10,
+      explain:c+' 公分就是 '+c+' 個 10 毫米，'+c+' × 10 ＝ '+(c*10)+' 毫米'}; }
+  function q2(){ var c=rnd(1,15);
+    return {sym:false, parts:[{n:c*10},{u:'mm'},{eq:1},{blank:1},{u:'cm'}], ans:c, mm:c*10,
+      explain:(c*10)+' 毫米裡有 '+c+' 個 10 毫米，所以是 '+c+' 公分'}; }
+  function q3(){ var c=rnd(1,15), mm=c*10, t=rnd(0,3), parts, ans, ex;
+    if(t===0){parts=[{n:c},{u:'cm'},{eq:1},{blank:1},{u:'mm'}];ans=mm;ex=c+' cm ＝ '+c+' 個 10 mm ＝ '+mm+' mm';}
+    else if(t===1){parts=[{n:mm},{u:'mm'},{eq:1},{blank:1},{u:'cm'}];ans=c;ex=mm+' mm 裡有 '+c+' 個 10 mm ＝ '+c+' cm';}
+    else if(t===2){parts=[{blank:1},{u:'mm'},{eq:1},{n:c},{u:'cm'}];ans=mm;ex=c+' cm ＝ '+mm+' mm，所以括號填 '+mm;}
+    else {parts=[{blank:1},{u:'cm'},{eq:1},{n:mm},{u:'mm'}];ans=c;ex=mm+' mm ＝ '+c+' cm，所以括號填 '+c;}
+    return {sym:true, parts:parts, ans:ans, mm:mm, explain:ex}; }
+  function q4(){ var c=rnd(1,14), m=rnd(1,9), tot=c*10+m, t=rnd(0,2), sym=Math.random()<.3, parts, ans, ex;
+    var cu=sym?'cm':'公分', mu=sym?'mm':'毫米';
+    if(t===0){parts=[{n:c},{u:'cm'},{n:m},{u:'mm'},{eq:1},{blank:1},{u:'mm'}];ans=tot;
+      ex=c+' '+cu+' ＝ '+(c*10)+' '+mu+'，再加 '+m+' '+mu+'，'+(c*10)+' ＋ '+m+' ＝ '+tot+' '+mu;}
+    else if(t===1){parts=[{n:tot},{u:'mm'},{eq:1},{n:c},{u:'cm'},{blank:1},{u:'mm'}];ans=m;
+      ex=c+' '+cu+' ＝ '+(c*10)+' '+mu+'，'+tot+' － '+(c*10)+' ＝ '+m+' '+mu;}
+    else {parts=[{n:tot},{u:'mm'},{eq:1},{blank:1},{u:'cm'},{n:m},{u:'mm'}];ans=c;
+      ex=tot+' '+mu+' 裡有 '+c+' 個 10 '+mu+'，還剩 '+m+' '+mu+'，所以是 '+c+' '+cu+' '+m+' '+mu;}
+    return {sym:sym, parts:parts, ans:ans, mm:tot, explain:ex}; }
+  var GENS={1:q1,2:q2,3:q3,4:q4};
+  function makeQ(lv){ return (lv===0 ? GENS[rnd(1,4)] : GENS[lv])(); }
+
+  // ---------- ruler SVG ----------
+  // 16 cm ruler, 10 units per mm, 20 px left padding
+  var X0=30, PX=10, MAXMM=160;
+  function drawRuler(svg, lenMm, animate){
+    var s='';
+    s+='<rect x="4" y="4" width="1652" height="118" rx="10" fill="var(--ruler)" stroke="var(--ruler-edge)" stroke-width="4"/>';
+    s+='<rect id="fillbar" x="'+X0+'" y="4" height="118" width="'+(animate?0:lenMm*PX)+'" fill="var(--fill)" style="transition:width .9s ease-out"/>';
+    for(var i=0;i<=MAXMM;i++){
+      var x=X0+i*PX, h=i%10===0?46:(i%5===0?32:20);
+      s+='<line x1="'+x+'" y1="4" x2="'+x+'" y2="'+(4+h)+'" stroke="var(--tick)" stroke-width="'+(i%10===0?3:2)+'"/>';
+      if(i%10===0) s+='<text x="'+x+'" y="88" text-anchor="middle" font-family="Baloo 2, sans-serif" font-weight="800" font-size="30" fill="var(--tick)">'+(i/10)+'</text>';
+    }
+    if(lenMm>0){
+      var ex=X0+lenMm*PX;
+      s+='<line x1="'+ex+'" y1="0" x2="'+ex+'" y2="126" stroke="#C0392B" stroke-width="5"/>';
+    }
+    svg.innerHTML=s;
+    if(animate){ requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      var fb=svg.querySelector('#fillbar'); if(fb) fb.setAttribute('width', lenMm*PX); }); }); }
+  }
+  // demo: highlight 0 to 1 cm with brace
+  (function(){
+    var svg=document.getElementById('demoRuler'); drawRuler(svg,10,false);
+    svg.innerHTML+='<text x="'+(X0+50)+'" y="116" text-anchor="middle" font-family="Noto Sans TC, sans-serif" font-weight="700" font-size="20" fill="var(--tick)">10 小格</text>';
+  })();
+
+  // ---------- state ----------
+  var st={lv:1, mode:'practice', score:0, streak:0, best:0, tries:0, total:0, input:'', cur:null, lastKey:'', locked:false, timeLeft:60, timer:null, maxStreak:0};
+  var $=function(id){return document.getElementById(id);};
+
+  function show(id){ ['start','game','end'].forEach(function(s){ $(s).classList.toggle('hidden', s!==id); }); window.scrollTo(0,0); }
+
+  function toggleGroup(container, attr, val){
+    container.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset[attr]===String(val)?'true':'false'); });
+  }
+  $('levels').addEventListener('click', function(e){ var b=e.target.closest('button'); if(!b) return; st.lv=+b.dataset.lv; toggleGroup(this,'lv',st.lv); });
+  $('modes').addEventListener('click', function(e){ var b=e.target.closest('button'); if(!b) return; st.mode=b.dataset.mode; toggleGroup(this,'mode',st.mode); });
+
+  function renderQ(){
+    var q=st.cur, h='';
+    q.parts.forEach(function(p){
+      if(p.n!==undefined) h+='<span class="num">'+p.n+'</span>';
+      else if(p.u) h+= q.sym ? '<span class="num">'+p.u+'</span>' : '<span>'+ZH[p.u]+'</span>';
+      else if(p.eq) h+='<span>＝</span>';
+      else if(p.blank) h+='<span class="blank" id="blank">'+(st.input||'&nbsp;')+'</span>';
+    });
+    $('q').innerHTML=h;
+  }
+  function newQ(){
+    var q, key, guard=0;
+    do{ q=makeQ(st.lv); key=JSON.stringify(q.parts); guard++; } while(key===st.lastKey && guard<10);
+    st.lastKey=key; st.cur=q; st.input=''; st.tries=0; st.locked=false;
+    $('fb').className='feedback'; $('fb').innerHTML='';
+    $('rulerArea').classList.add('hidden');
+    renderQ();
+  }
+  function updateBlank(){ var b=$('blank'); if(b){ b.className='blank'; b.innerHTML=st.input||'&nbsp;'; } }
+  function stats(){ $('score').textContent=st.score; $('streak').textContent=st.streak; }
+
+  function showRuler(label){
+    var mm=st.cur.mm, c=Math.floor(mm/10), m=mm%10;
+    var txt = label || ('尺上塗色的長度：'+(m? c+' 公分 '+m+' 毫米 ＝ '+mm+' 毫米' : c+' 公分 ＝ '+mm+' 毫米'));
+    $('rulerCap').textContent=txt;
+    $('rulerArea').classList.remove('hidden');
+    drawRuler($('ruler'), mm, true);
+  }
+
+  function submit(){
+    if(st.locked || st.input==='') return;
+    var val=parseInt(st.input,10), b=$('blank'), fb=$('fb');
+    st.total++;
+    if(val===st.cur.ans){
+      st.locked=true; st.score++; st.streak++; st.maxStreak=Math.max(st.maxStreak,st.streak);
+      b.className='blank ok';
+      var cheer = st.streak>=10?'太厲害了！連續 '+st.streak+' 題！': st.streak>=5?'好棒！連續 '+st.streak+' 題答對！': pick(['答對了！','正確！','很好！','沒錯！']);
+      fb.className='feedback ok'; fb.innerHTML=cheer+'<small>'+st.cur.explain+'</small>';
+      stats();
+      if(st.mode==='practice'){ showRuler(); setTimeout(newQ, 2200); }
+      else setTimeout(newQ, 650);
+    } else {
+      st.streak=0; st.tries++; stats();
+      b.className='blank bad'; void b.offsetWidth;
+      if(st.mode==='timed'){
+        st.locked=true;
+        fb.className='feedback bad'; fb.innerHTML='答案是 '+st.cur.ans+'<small>'+st.cur.explain+'</small>';
+        setTimeout(newQ, 1500);
+      } else if(st.tries===1){
+        fb.className='feedback bad'; fb.innerHTML='再想想看！<small>記得：1 公分 ＝ 10 毫米。看看下面的尺。</small>';
+        showRuler('數數看：塗色的部分有幾個大格（公分）、幾個小格（毫米）？');
+        st.input=''; setTimeout(updateBlank, 400);
+      } else {
+        st.locked=true;
+        fb.className='feedback bad'; fb.innerHTML='答案是 '+st.cur.ans+'<small>'+st.cur.explain+'</small>';
+        b.className='blank ok'; b.textContent=st.cur.ans;
+        showRuler();
+        setTimeout(newQ, 3800);
+      }
+    }
+  }
+
+  function press(k){
+    if(k==='ok') return submit();
+    if(k==='hint'){ if(!st.locked && st.mode==='practice') showRuler('數數看：塗色的部分有幾個大格（公分）、幾個小格（毫米）？'); return; }
+    if(st.locked) return;
+    if(k==='del'){ st.input=st.input.slice(0,-1); }
+    else if(/^\d$/.test(k)){ if(st.input.length<3) st.input = (st.input==='0'?'':st.input)+k; }
+    updateBlank();
+  }
+  document.querySelectorAll('#pad .k, .row2 .k').forEach(function(b){ b.addEventListener('click', function(){ press(b.dataset.k); }); });
+  document.addEventListener('keydown', function(e){
+    if($('game').classList.contains('hidden')) return;
+    if(/^\d$/.test(e.key)) press(e.key);
+    else if(e.key==='Backspace'){ e.preventDefault(); press('del'); }
+    else if(e.key==='Enter'){ e.preventDefault(); press('ok'); }
+  });
+
+  function bestKey(){ return 'cmmm-best-'+st.lv; }
+  function start(){
+    st.score=0; st.streak=0; st.total=0; st.maxStreak=0; stats();
+    var timed = st.mode==='timed';
+    $('timeChip').classList.toggle('hidden', !timed);
+    $('timebar').classList.toggle('hidden', !timed);
+    $('hintBtn').classList.toggle('hidden', timed);
+    $('okBtn').style.gridColumn = timed ? 'span 2' : '';
+    clearInterval(st.timer);
+    if(timed){
+      st.timeLeft=60; $('time').textContent=60; $('timefill').style.width='100%';
+      st.timer=setInterval(function(){
+        st.timeLeft--; $('time').textContent=st.timeLeft;
+        $('timefill').style.width=(st.timeLeft/60*100)+'%';
+        if(st.timeLeft<=0) finish();
+      },1000);
+    }
+    show('game'); newQ();
+  }
+  function finish(){
+    clearInterval(st.timer);
+    $('endScore').textContent=st.score;
+    var acc = st.total ? Math.round(st.score/st.total*100) : 0;
+    $('endDetail').textContent='作答 '+st.total+' 次，正確率 '+acc+'%，最多連續答對 '+st.maxStreak+' 題';
+    var best=0; try{ best=+(localStorage.getItem(bestKey())||0); }catch(e){}
+    if(st.mode==='timed'){
+      if(st.score>best){ try{ localStorage.setItem(bestKey(), st.score); }catch(e){} $('endBest').textContent='新紀錄！'; $('endTitle').textContent='時間到！打破紀錄了！'; }
+      else { $('endBest').textContent='這一關的最高紀錄：'+best+' 題'; $('endTitle').textContent='時間到！'; }
+    } else { $('endBest').textContent=''; $('endTitle').textContent= st.score>=10?'練習得很認真！':'做得好！'; }
+    show('end');
+  }
+  $('goBtn').addEventListener('click', start);
+  $('againBtn').addEventListener('click', start);
+  $('menuBtn').addEventListener('click', function(){ show('start'); });
+  $('quitBtn').addEventListener('click', finish);
+})();
+</script>
+</body>
+</html>
