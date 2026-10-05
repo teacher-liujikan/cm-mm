@@ -207,23 +207,34 @@ h2{font-size:1.1rem;margin:22px 0 10px}
   };
   var PLAIN = {cm:'公分', mm:'毫米'};
   function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+  // 洗牌袋：同一組數字全部出過一輪才會重複，而且不會連續出現同一個數字
+  var bags={}, lastDrawn={};
+  function draw(name,a,b){
+    if(!bags[name]||!bags[name].length){
+      var arr=[]; for(var i=a;i<=b;i++) arr.push(i);
+      for(var j=arr.length-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=arr[j];arr[j]=arr[k];arr[k]=t;}
+      if(arr.length>1 && arr[arr.length-1]===lastDrawn[name]){var t2=arr[0];arr[0]=arr[arr.length-1];arr[arr.length-1]=t2;}
+      bags[name]=arr;
+    }
+    var v=bags[name].pop(); lastDrawn[name]=v; return v;
+  }
   function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
 
   // ---------- question generators ----------
   // parts: {n}, {u}, {eq}, {blank}
-  function q1(){ var c=rnd(1,15);
+  function q1(){ var c=draw('c1',1,15);
     return {sym:false, parts:[{n:c},{u:'cm'},{eq:1},{blank:1},{u:'mm'}], ans:c*10, mm:c*10,
       explain:c+' 公分就是 '+c+' 個 10 毫米，'+c+' × 10 ＝ '+(c*10)+' 毫米'}; }
-  function q2(){ var c=rnd(1,15);
+  function q2(){ var c=draw('c2',1,15);
     return {sym:false, parts:[{n:c*10},{u:'mm'},{eq:1},{blank:1},{u:'cm'}], ans:c, mm:c*10,
       explain:(c*10)+' 毫米裡有 '+c+' 個 10 毫米，所以是 '+c+' 公分'}; }
-  function q3(){ var c=rnd(1,15), mm=c*10, t=rnd(0,3), parts, ans, ex;
+  function q3(){ var c=draw('c3',1,15), mm=c*10, t=draw('t3',0,3), parts, ans, ex;
     if(t===0){parts=[{n:c},{u:'cm'},{eq:1},{blank:1},{u:'mm'}];ans=mm;ex=c+' cm ＝ '+c+' 個 10 mm ＝ '+mm+' mm';}
     else if(t===1){parts=[{n:mm},{u:'mm'},{eq:1},{blank:1},{u:'cm'}];ans=c;ex=mm+' mm 裡有 '+c+' 個 10 mm ＝ '+c+' cm';}
     else if(t===2){parts=[{blank:1},{u:'mm'},{eq:1},{n:c},{u:'cm'}];ans=mm;ex=c+' cm ＝ '+mm+' mm，所以括號填 '+mm;}
     else {parts=[{blank:1},{u:'cm'},{eq:1},{n:mm},{u:'mm'}];ans=c;ex=mm+' mm ＝ '+c+' cm，所以括號填 '+c;}
     return {sym:true, parts:parts, ans:ans, mm:mm, explain:ex}; }
-  function q4(){ var c=rnd(1,14), m=rnd(1,9), tot=c*10+m, t=rnd(0,2), sym=Math.random()<.3, parts, ans, ex;
+  function q4(){ var c=draw('c4',1,14), m=draw('m4',1,9), tot=c*10+m, t=draw('t4',0,2), sym=Math.random()<.3, parts, ans, ex;
     var cu=sym?'cm':'公分', mu=sym?'mm':'毫米';
     if(t===0){parts=[{n:c},{u:'cm'},{n:m},{u:'mm'},{eq:1},{blank:1},{u:'mm'}];ans=tot;
       ex=c+' '+cu+' ＝ '+(c*10)+' '+mu+'，再加 '+m+' '+mu+'，'+(c*10)+' ＋ '+m+' ＝ '+tot+' '+mu;}
